@@ -1,0 +1,206 @@
+---
+title: "qualtrics"
+author: "athemiiix"
+date: "1/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r delete everything}
+#clear environment
+#rm(list=ls())
+
+#unload packages
+#lapply(names(sessionInfo()$loadedOnly), require, character.only = TRUE)
+#invisible(lapply(paste0('package:', names(sessionInfo()$otherPkgs)), detach, character.only=TRUE, unload=TRUE, force=TRUE))
+```
+
+```{r lib}
+library(tidyverse)
+library(qualtRics)
+library(kutils)
+library(plyr)
+library(tibble)
+library(reshape)
+library(ggplot2)
+library(dplyr)
+
+#devtools::install_github("JasperHG90/qualtRics")
+```
+
+```{r setwd}
+setwd("C:/Users/anchi/Downloads")
+```
+
+```{r register Qualtrics API credentials}
+qualtrics_api_credentials(api_key = "yWjSAdHhsZbsfnOUqJECP2WbTAKd3fziIwQ7hTWw", base_url = "https://api.qualtrics.com", overwrite = FALSE, install = FALSE)
+```
+
+```{r test qualtRics functionality}
+surveys <- all_surveys()
+
+#Error in qualtrics_response_codes(res) : 
+ ## Qualtrics API raised an forbidden (403) error - you may have a valid API
+  ### key that lacks permissions to query the API. Please check your settings and/or talk to your administrators.
+```
+
+
+
+
+```{r clean qualtrics}
+#qualtrics %>%
+ # rename(
+  #  con_yn = Q1
+  #)
+qualtrics <- importQualtrics("PlorkSeptete - Fake Survey Data - for baseline proto.csv", namerow = 1, questionrow = 2, importidrow = 3,
+                skip = 3, dropTEXT = FALSE, stringsAsFactors = FALSE)
+
+qualtrics$consyn <- qualtrics$Q1
+
+#qualtrics$consyn <- revalue(qualtrics$consyn, c("I am currently conducting a consultation."=1))
+
+#qualtrics$consyn <- revalue(qualtrics$consyn, c("I am planning a consultation within the next six months."=0))
+
+tracking <- qualtrics %>% slice(1:730)
+tracking2 <- qualtrics %>% slice(1:204)
+#tracking <- subset(qualtrics, Q1=="I am currently conducting a consultation.")
+
+myvars <- c("abbr", "Q4", "ongoing_consult", "planned_consult", "completed_consult", "missed_consult", "Q9", "EndDate")
+
+mytracking <- tracking[myvars]
+mytracking2 <- tracking2[myvars]
+
+rownames(mytracking) <- mytracking$Q4
+
+#myvars <- c("Q2", "ongoing_consult", "planned_consult", "completed_consult", "missed_consult")
+#mytracking <- tracking[myvars]
+
+```
+
+```{r}
+planning <- subset(qualtrics, Q1=="I am planning a consultation within the next six months.")
+
+myplanning <- planning[myvars]
+
+central <- subset(qualtrics, prov=="Ontario" | prov =="Quebec")
+mycentral <- central[myvars]
+
+```
+
+
+```{r test}
+# Library
+library(ggplot2)
+
+# Dummy data
+x <- LETTERS[1:20]
+y <- paste0("var", seq(1,20))
+data <- expand.grid(X=x, Y=y)
+data$Z <- runif(400, 0, 5)
+ 
+# Heatmap 
+ggplot(data, aes(X, Y, fill= Z)) + 
+  geom_tile()
+```
+
+
+```{r heatmap}
+normalize <- function(x) {
+return ((x - min(x)) / (max(x) - min(x)))
+}
+
+mytracking$ongoing_consult_norm <- normalize(mytracking$ongoing_consult)
+
+data_melt <- melt(mytracking)
+ggp <- ggplot(data = mytracking, aes(Q2, Q4, fill= ongoing1_consult_norm))+
+  geom_tile()
+ggp
+             
+
+mytracking$ogcn2<-normalize(mytracking2$ongoing_consult)
+
+data_melt <- melt(mytracking2)
+ggp <- ggplot(data = mytracking2, aes(Q2, Q4,fill=ongoing_consult))+
+  geom_tile()
+ggp
+
+
+#, fill=runif(400,0,5)
+
+```
+
+
+```{r}
+theme_set(theme_bw())  # pre-set the bw theme.
+data("midwest", package = "ggplot2")
+# midwest <- read.csv("http://goo.gl/G1K41K")  # bkup data source
+
+# Scatterplot
+gg <- ggplot(midwest, aes(x=area, y=poptotal)) + 
+  geom_point(aes(col=state, size=popdensity)) + 
+  geom_smooth(method="loess", se=F) + 
+  xlim(c(0, 0.1)) + 
+  ylim(c(0, 500000)) + 
+  labs(subtitle="Area Vs Population", 
+       y="Population", 
+       x="Area", 
+       title="Scatterplot", 
+       caption = "Source: midwest")
+
+```
+
+
+```{r scatter}
+
+theme_set(theme_bw())  # pre-set the bw theme.
+data("mytracking", package = "ggplot2")
+# midwest <- read.csv("http://goo.gl/G1K41K")  # bkup data source
+
+# Scatterplot
+gg <- ggplot(mytracking, aes(x=Q2, y=Q4)) + 
+  geom_point(aes(col=Q9, size=ongoing_consult)) + 
+  #geom_smooth(method="loess", se=F) + 
+  #xlim(c(0, 0.1)) + 
+ #ylim(c(0, 500000)) + 
+  labs(subtitle="Size = # of Ongoing Consultations, Colour = Project Status", 
+       y="Indigenous Groups", 
+       x="Federal Departments / Agencies", 
+       title="Ongoing Indigenous Consultations", 
+       caption = "Source: Consultation Hub / ATRIS")
+
+plot(gg)
+
+```
+
+
+```{r}
+ggb <- ggplot(mytracking2, aes(x=abbr, y=ongoing_consult))+
+  geom_bar(stat = "identity")+
+  labs(x="Federal Departments/Agencies")
+
+plot(ggb)
+
+```
+
+
+```{r}
+library(ggplot2)
+library(scales)
+library(lubridate)
+
+parse_date_time(mytracking$EndDate, c("%m/%d/%Y %H:%M"))
+
+ggt<- ggplot(mytracking, aes(x = EndDate, y = ongoing_consult)) +
+  geom_line()+
+  geom_smooth() +
+    labs(title = "Personal Savings Rate",
+       subtitle = "1967 to 2015",
+       x = "",
+       y = "Personal Savings Rate") +
+  theme_minimal()
+plot(ggt)
+
+```
