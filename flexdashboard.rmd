@@ -1,0 +1,140 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    
+---
+
+```{r lib}
+library(ggplot2)
+library(XLConnect)
+library(readxl)
+library(gplots)
+library(heatmap.plus)
+library(RColorBrewer)
+library(tidyverse)
+library(qualtRics)
+library(kutils)
+library(plyr)
+library(tibble)
+library(reshape)
+library(ggplot2)
+library(dplyr)
+
+#devtools::install_github("JasperHG90/qualtRics")
+```
+
+```{r clean qualtrics}
+#qualtrics %>%
+ # rename(
+  #  con_yn = Q1
+  #)
+qualtrics <- importQualtrics("C:/Users/anchi/Downloads/PlorkSeptete - Fake Survey Data - for baseline proto.csv", namerow = 1, questionrow = 2, importidrow = 3,
+                skip = 3, dropTEXT = FALSE, stringsAsFactors = FALSE)
+
+qualtrics$consyn <- qualtrics$Q1
+
+#qualtrics$consyn <- revalue(qualtrics$consyn, c("I am currently conducting a consultation."=1))
+
+#qualtrics$consyn <- revalue(qualtrics$consyn, c("I am planning a consultation within the next six months."=0))
+
+tracking <- qualtrics %>% slice(1:730)
+tracking2 <- qualtrics %>% slice(1:204)
+#tracking <- subset(qualtrics, Q1=="I am currently conducting a consultation.")
+
+myvars <- c("abbr", "Q4", "ongoing_consult", "planned_consult", "completed_consult", "missed_consult", "Q9", "EndDate")
+
+mytracking <- tracking[myvars]
+mytracking2 <- tracking2[myvars]
+
+rownames(mytracking) <- mytracking$Q4
+
+#myvars <- c("Q2", "ongoing_consult", "planned_consult", "completed_consult", "missed_consult")
+#mytracking <- tracking[myvars]
+
+```
+
+```{r}
+ongoing <- read_xlsx(path = "C:/Users/anchi/Downloads/heatmap.xlsx", sheet = "ongoing", col_names = TRUE)
+
+
+ongoing2 <- read_xlsx(path = "C:/Users/anchi/Downloads/heatmap.xlsx", sheet = "ongoing (2)", col_names = TRUE)
+
+
+hvars <- ongoing$Indig
+#rownames(ongoing) <- ongoing$Indig
+#hvars2 <- ongoing3$dept
+#delete indig from excel and save it, then undo
+
+rownames(ongoing) <- hvars
+rownames(ongoing2) <- hvars
+
+
+```
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(shiny)
+```
+
+```{r data}
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r heatmap}
+theme_set(theme_bw())  # pre-set the bw theme.
+data("mytracking", package = "ggplot2")
+# midwest <- read.csv("http://goo.gl/G1K41K")  # bkup data source
+
+# Scatterplot
+gg <- ggplot(mytracking, aes(x=abbr, y=Q4)) + 
+  geom_jitter(aes(col=Q9, size=ongoing_consult)) + 
+  #geom_smooth(method="loess", se=F) + 
+  #xlim(c(0, 0.1)) + 
+ #ylim(c(0, 500000)) + 
+  labs(subtitle="Size = # of Ongoing Consultations, Colour = Project Status", 
+       y="Indigenous Groups", 
+       x="Federal Departments / Agencies", 
+       title="Ongoing Indigenous Consultations", 
+       caption = "Source: Consultation Hub / ATRIS")
+
+plot(gg)
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+coul <- colorRampPalette(brewer.pal(8, "PiYG"))(25)
+heatmap(as.matrix(ongoing2)
+,scale="column"
+,col=coul
+,main="Ongoing Consultations"
+,Rowv=NA
+,Colv=NA
+,xlab = "Department / Agency"
+,ylab = ""
+)
+```
+
+### Chart C
+
+```{r}
+ggb <- ggplot(mytracking2, aes(x=abbr, y=ongoing_consult))+
+  geom_bar(stat = "identity")+
+  labs(x="Federal Departments/Agencies")
+
+plot(ggb)
+```
+

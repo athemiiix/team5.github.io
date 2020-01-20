@@ -1,0 +1,92 @@
+---
+title: "heatmap"
+author: "athemiiix"
+date: "1/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r lib}
+library(ggplot2)
+library(XLConnect)
+library(readxl)
+library(gplots)
+library(heatmap.plus)
+library(RColorBrewer)
+```
+
+```{r}
+ongoing <- read_xlsx(path = "C:/Users/anchi/Downloads/heatmap.xlsx", sheet = "ongoing", col_names = TRUE)
+
+
+ongoing2 <- read_xlsx(path = "C:/Users/anchi/Downloads/heatmap.xlsx", sheet = "ongoing (2)", col_names = TRUE)
+
+
+hvars <- ongoing$Indig
+#rownames(ongoing) <- ongoing$Indig
+#hvars2 <- ongoing3$dept
+#delete indig from excel and save it, then undo
+
+rownames(ongoing) <- hvars
+rownames(ongoing2) <- hvars
+
+
+```
+
+
+```{r heatmap}
+#ggp <- ggplot(data = mtracking, aes(Q2, Q4, fill= ongoing1_consult_norm))+
+  #geom_tile()
+#ggp
+```
+
+```{r heatmap like mtcars}
+#par(mai=c(3,0.82,0.82,0.42))
+heatmap(as.matrix(ongoing[])
+,scale="column"
+,col=heat.colors(256)
+,main="# of Ongoing Consultations"
+,Rowv=NA
+,Colv=NA
+)
+```
+```{r heatmap like mtcars}
+#par(mar=c(10,10,10,10))
+heatmap(as.matrix(ongoing2[])
+,scale="column"
+,col=heat.colors(256)
+,main="# of Ongoing Consultations"
+,Rowv=NA
+,Colv=NA
+)
+```
+
+
+
+
+```{r colorbrewer}
+#library(reshape)
+#library(graphics)
+#library(grDevices)
+
+coul <- colorRampPalette(brewer.pal(8, "PiYG"))(25)
+#heatmap(ongoing3, scale="column", col = coul)
+
+par(mar=c(5,6,6,1))
+heatmap(as.matrix(ongoing2[])
+,scale="column"
+,col=coul
+,main="# of Ongoing Consultations"
+,Rowv=NA
+,Colv=NA
+,xlab = "Department / Agency"
+,ylab = "Indigenous Group"
+)
+```
+
+```{r}
+
+```
